@@ -224,10 +224,11 @@ class WINDECLSPEC PacketHandler
   /// @description transmits the packet with PacketHandler::txRxPacket(),
   /// @description then Dynamixel reboots.
   /// @description During reboot, its LED will blink.
+  /// @description It will take some time to reboot. It will take longer for Y series.
   /// @param port PortHandler instance
   /// @param id Dynamixel ID
   /// @param error Dynamixel hardware error
-  /// @return COMM_NOT_AVAILABLE
+  /// @return communication results which come from PacketHandler::txRxPacket()
   ////////////////////////////////////////////////////////////////////////////////
   virtual int reboot          (PortHandler *port, uint8_t id, uint8_t *error = 0) = 0;
 
@@ -236,7 +237,8 @@ class WINDECLSPEC PacketHandler
   /// @description The function makes an instruction packet with INST_CLEAR,
   /// @description transmits the packet with PacketHandler::txRxPacket().
   /// @description Applied Products : MX with Protocol 2.0 (Firmware v42 or above),
-  /// @description Dynamixel X-series (Firmware v42 or above).
+  /// @description DYNAMIXEL X-series (Firmware v42 or above), DYNAMIXEL Y-series.
+  /// @description It will take some time to clear. It will take longer for Y series.
   /// @param port PortHandler instance
   /// @param id Dynamixel ID
   /// @param error Dynamixel hardware error
