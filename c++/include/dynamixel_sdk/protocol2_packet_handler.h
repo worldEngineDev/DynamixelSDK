@@ -210,7 +210,7 @@ class WINDECLSPEC Protocol2PacketHandler : public PacketHandler
   /// @param error DYNAMIXEL hardware error
   /// @return communication results which come from PacketHandler::txRxPacket()
   ////////////////////////////////////////////////////////////////////////////////
-  int clearError      (PortHandler *port, uint8_t id, uint8_t *error = 0) = 0;  
+  int clearError      (PortHandler *port, uint8_t id, uint8_t *error = 0);  
 
   ////////////////////////////////////////////////////////////////////////////////
   /// @brief The function that makes Dynamixel reset as it was produced in the factory
