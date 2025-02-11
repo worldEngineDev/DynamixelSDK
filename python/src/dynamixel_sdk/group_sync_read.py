@@ -21,6 +21,8 @@
 
 from .robotis_def import *
 
+from typing import Tuple, Optional
+
 
 class GroupSyncRead:
     def __init__(self, port, ph, start_address, data_length):
@@ -84,8 +86,13 @@ class GroupSyncRead:
         if self.is_param_changed is True or not self.param:
             self.makeParam()
 
-        return self.ph.syncReadTx(self.port, self.start_address, self.data_length, self.param,
-                                  len(self.data_dict.keys()) * 1)
+        return self.ph.syncReadTx(
+            self.port,
+            self.start_address,
+            self.data_length,
+            self.param,
+            len(self.data_dict.keys()) * 1,
+        )
 
     def rxPacket(self):
         self.last_result = False
@@ -99,7 +106,9 @@ class GroupSyncRead:
             return COMM_NOT_AVAILABLE
 
         for dxl_id in self.data_dict:
-            self.data_dict[dxl_id], result, _ = self.ph.readRx(self.port, dxl_id, self.data_length)
+            self.data_dict[dxl_id], result, _ = self.ph.readRx(
+                self.port, dxl_id, self.data_length
+            )
             if result != COMM_SUCCESS:
                 return result
 
@@ -107,6 +116,31 @@ class GroupSyncRead:
             self.last_result = True
 
         return result
+
+    def rxPacketWithError(self) -> Tuple[int, Optional[str]]:
+        """
+        Extract errors from the request
+        """
+        err = None
+        self.last_result = False
+
+        result = COMM_RX_FAIL
+
+        if self.ph.getProtocolVersion() == 1.0 or len(self.data_dict.keys()) == 0:
+            return COMM_NOT_AVAILABLE, None
+
+        # Sequential read??? This is not FastSyncRead
+        for dxl_id in self.data_dict:
+            self.data_dict[dxl_id], result, err = self.ph.readRx(
+                self.port, dxl_id, self.data_length
+            )
+            if result != COMM_SUCCESS:
+                return result, None if err is None else self.ph.getRxPacketError(err)
+
+        if result == COMM_SUCCESS:
+            self.last_result = True
+
+        return result, None if err is None else self.ph.getRxPacketError(err)
 
     def txRxPacket(self):
         if self.ph.getProtocolVersion() == 1.0:
@@ -118,11 +152,28 @@ class GroupSyncRead:
 
         return self.rxPacket()
 
+    def txRxPacketWithError(self) -> Tuple[int, Optional[str]]:
+        """
+        Conduct a txRx transaction and also return the error string if it fails
+        """
+
+        result = self.txPacket()
+        if result != COMM_SUCCESS:
+            return result, "Data write failed, for unknown reasons"
+
+        return self.rxPacketWithError()
+
     def isAvailable(self, dxl_id, address, data_length):
-        if self.ph.getProtocolVersion() == 1.0 or self.last_result is False or dxl_id not in self.data_dict:
+        if (
+            self.ph.getProtocolVersion() == 1.0
+            or self.last_result is False
+            or dxl_id not in self.data_dict
+        ):
             return False
 
-        if (address < self.start_address) or (self.start_address + self.data_length - data_length < address):
+        if (address < self.start_address) or (
+            self.start_address + self.data_length - data_length < address
+        ):
             return False
 
         return True
@@ -134,12 +185,20 @@ class GroupSyncRead:
         if data_length == 1:
             return self.data_dict[dxl_id][address - self.start_address]
         elif data_length == 2:
-            return DXL_MAKEWORD(self.data_dict[dxl_id][address - self.start_address],
-                                self.data_dict[dxl_id][address - self.start_address + 1])
+            return DXL_MAKEWORD(
+                self.data_dict[dxl_id][address - self.start_address],
+                self.data_dict[dxl_id][address - self.start_address + 1],
+            )
         elif data_length == 4:
-            return DXL_MAKEDWORD(DXL_MAKEWORD(self.data_dict[dxl_id][address - self.start_address + 0],
-                                              self.data_dict[dxl_id][address - self.start_address + 1]),
-                                 DXL_MAKEWORD(self.data_dict[dxl_id][address - self.start_address + 2],
-                                              self.data_dict[dxl_id][address - self.start_address + 3]))
+            return DXL_MAKEDWORD(
+                DXL_MAKEWORD(
+                    self.data_dict[dxl_id][address - self.start_address + 0],
+                    self.data_dict[dxl_id][address - self.start_address + 1],
+                ),
+                DXL_MAKEWORD(
+                    self.data_dict[dxl_id][address - self.start_address + 2],
+                    self.data_dict[dxl_id][address - self.start_address + 3],
+                ),
+            )
         else:
             return 0
