@@ -25,7 +25,7 @@ import time
 
 import serial
 
-LATENCY_TIMER = 8
+LATENCY_TIMER = 16
 DEFAULT_BAUDRATE = 1000000
 
 
